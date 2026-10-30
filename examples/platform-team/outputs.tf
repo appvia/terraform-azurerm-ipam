@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 output "provider_config" {
   description = "Backend settings to hand to the consuming teams (account_url and container)."

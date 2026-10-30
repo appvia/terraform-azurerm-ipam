@@ -1,2 +1,5 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 # https://www.shellcheck.net/wiki/
 # disable=SC2034  # Description of why this rule is disabled

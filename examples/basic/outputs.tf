@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 output "backend_url" {
   description = "ipam backend URL for the CLI and IPAM_BACKEND."

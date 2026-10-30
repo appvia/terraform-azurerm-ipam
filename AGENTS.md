@@ -49,6 +49,7 @@ Inputs: `resource_group_name`, `location`, `storage_account_name` (required); `a
 - Principal IDs are `for_each` keys: must be known at plan time.
 - Checkov skips are inline `#checkov:skip=ID:reason` on the resource (see storage account); `.checkov.yml` has `soft-fail: false`.
 - tflint: terraform ruleset (azurerm ruleset is inert here); every variable/output needs a description and a type; snake_case.
+- License: Apache-2.0 (`LICENSE`). Every `.tf`, `.hcl`, `.sh`, `.py`, `.yml`, `.yaml`, `.toml`, `Makefile` and dotfile starts with `# Copyright 2026 Appvia Ltd.` + `# SPDX-License-Identifier: Apache-2.0`; `scripts/license-headers.sh` adds and checks them (skips `testdata/`, `docs/`).
 - Comments: `##` heads each resource block, `#` inline; never `//` (terraform_comment_syntax).
 - Commits: Conventional Commits, lower-case type, header <= 100 chars (`.commitlintrc.yml`); pre-commit blocks commits to `main`.
 
@@ -77,7 +78,9 @@ terraform test -test-directory=test        # == make tests; 8 runs, no creds, no
 terraform fmt -recursive                   # == make format
 tflint --init && tflint -f compact         # == make lint (root + examples)
 checkov --config-file .checkov.yml -d .    # == make security
-terraform-docs .                           # == make documentation; regenerates README tables
+terraform-docs .                           # == make documentation; regenerates README (formatter: markdown document)
+make license-headers                       # add missing Copyright/SPDX (Apache-2.0) headers; `make lint` runs the --check
+make test-scripts                          # scenario tests for scripts/license-headers.sh
 make all                                   # init validate tests lint security format documentation
 pre-commit run --all-files
 ```

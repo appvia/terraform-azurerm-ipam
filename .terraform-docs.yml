@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 #header-from: .header.md
 settings:
   anchor: true
@@ -11,7 +14,7 @@ settings:
   type: true
   lockfile: false
 
-formatter: "markdown table"
+formatter: "markdown document"
 
 output:
   file: README.md

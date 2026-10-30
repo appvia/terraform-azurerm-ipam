@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 variable "resource_group_name" {
   description = "Name of the existing resource group that holds the storage account."

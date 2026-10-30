@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 ---
 # https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
 framework:

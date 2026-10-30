@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 locals {
   blob_endpoint = "https://${var.storage_account_name}.blob.core.windows.net"

@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 variable "account_url" {
   description = "Blob endpoint of the ipam storage account (provider_config.account_url from the platform team)."

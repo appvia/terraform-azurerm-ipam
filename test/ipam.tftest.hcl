@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 # Plan-only unit tests with a mocked azapi provider: no Azure credentials, no spend.
 
 mock_provider "azapi" {}

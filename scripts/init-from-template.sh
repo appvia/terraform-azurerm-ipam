@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 set -euo pipefail
 
 # Pre-commit hook that initialises a repo created from the template:

@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 #####################################################################################
 # Terraform module examples are meant to show an _example_ on how to use a module

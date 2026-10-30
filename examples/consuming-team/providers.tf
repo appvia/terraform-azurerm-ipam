@@ -1,3 +1,6 @@
+# Copyright 2026 Appvia Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 
 ## Authenticates as the team's deploy identity through ARM_* variables
 ## (client secret, OIDC or managed identity). No secret belongs in this file.
