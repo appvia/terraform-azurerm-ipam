@@ -93,16 +93,17 @@ See the [examples](./examples) directory for working usage examples.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.9 |
-| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.8 |
+The following requirements are needed by this module:
+
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.9)
+
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.8)
 
 ## Providers
 
-| Name | Version |
-|------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.8 |
+The following providers are used by this module:
+
+- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 2.8)
 
 ## Modules
 
@@ -110,42 +111,136 @@ No modules.
 
 ## Resources
 
-| Name | Type |
-|------|------|
-| [azapi_resource.container](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.environment_reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.environment_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.platform](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.reservations_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_resource.storage_account](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
-| [azapi_update_resource.blob_service](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) | resource |
+The following resources are used by this module:
 
-## Inputs
+- [azapi_resource.container](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.environment_reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.environment_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.platform](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.reservations_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_account](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_update_resource.blob_service](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_location"></a> [location](#input\_location) | Azure region for the storage account. | `string` | n/a | yes |
-| <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the existing resource group that holds the storage account. | `string` | n/a | yes |
-| <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name) | Globally unique name of the storage account that holds the ipam documents (3-24 lowercase letters and digits). | `string` | n/a | yes |
-| <a name="input_account_replication_type"></a> [account\_replication\_type](#input\_account\_replication\_type) | Replication type of the storage account (for example LRS, ZRS, GRS, GZRS). | `string` | `"GZRS"` | no |
-| <a name="input_container_name"></a> [container\_name](#input\_container\_name) | Name of the private blob container that holds pools/ and reservations/. | `string` | `"ipam"` | no |
-| <a name="input_environment_role"></a> [environment\_role](#input\_environment\_role) | How environment identities get write access to their reservations documents.<br/>"builtin" (default): the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the environment's reservations/<pool\_id>.json paths and denying blob delete/add/move. This role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict; the account's CanNotDelete lock blocks container deletion through ARM, and container soft delete covers the rest.<br/>"custom": a module-created custom role with only blob read/write data actions, conditioned to the same paths. No delete, no add, no management-plane actions. | `string` | `"builtin"` | no |
-| <a name="input_environments"></a> [environments](#input\_environments) | Per-environment access. Each entry lists the pool IDs whose reservations/<pool\_id>.json the environment may overwrite, and the object IDs of its deploy identities. Pool IDs are enough; the pools need not exist yet. | <pre>map(object({<br/>    pool_ids      = list(string)<br/>    principal_ids = list(string)<br/>  }))</pre> | `{}` | no |
-| <a name="input_platform_principal_ids"></a> [platform\_principal\_ids](#input\_platform\_principal\_ids) | Object IDs of the platform identities. They get "Storage Blob Data Contributor" on the container and are the only identities that can write pools/* or delete documents. | `list(string)` | `[]` | no |
-| <a name="input_reader_principal_ids"></a> [reader\_principal\_ids](#input\_reader\_principal\_ids) | Object IDs of identities that only need to read pools and reservations. | `list(string)` | `[]` | no |
-| <a name="input_soft_delete_retention_days"></a> [soft\_delete\_retention\_days](#input\_soft\_delete\_retention\_days) | Retention in days for blob and container soft delete. | `number` | `30` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Tags applied to the storage account. | `map(string)` | `{}` | no |
+## Required Inputs
+
+The following input variables are required:
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: Azure region for the storage account.
+
+Type: `string`
+
+### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+
+Description: Name of the existing resource group that holds the storage account.
+
+Type: `string`
+
+### <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name)
+
+Description: Globally unique name of the storage account that holds the ipam documents (3-24 lowercase letters and digits).
+
+Type: `string`
+
+## Optional Inputs
+
+The following input variables are optional (have default values):
+
+### <a name="input_account_replication_type"></a> [account\_replication\_type](#input\_account\_replication\_type)
+
+Description: Replication type of the storage account (for example LRS, ZRS, GRS, GZRS).
+
+Type: `string`
+
+Default: `"GZRS"`
+
+### <a name="input_container_name"></a> [container\_name](#input\_container\_name)
+
+Description: Name of the private blob container that holds pools/ and reservations/.
+
+Type: `string`
+
+Default: `"ipam"`
+
+### <a name="input_environment_role"></a> [environment\_role](#input\_environment\_role)
+
+Description: How environment identities get write access to their reservations documents.
+"builtin" (default): the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the environment's reservations/<pool\_id>.json paths and denying blob delete/add/move. This role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict; the account's CanNotDelete lock blocks container deletion through ARM, and container soft delete covers the rest.
+"custom": a module-created custom role with only blob read/write data actions, conditioned to the same paths. No delete, no add, no management-plane actions.
+
+Type: `string`
+
+Default: `"builtin"`
+
+### <a name="input_environments"></a> [environments](#input\_environments)
+
+Description: Per-environment access. Each entry lists the pool IDs whose reservations/<pool\_id>.json the environment may overwrite, and the object IDs of its deploy identities. Pool IDs are enough; the pools need not exist yet.
+
+Type:
+
+```hcl
+map(object({
+    pool_ids      = list(string)
+    principal_ids = list(string)
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_platform_principal_ids"></a> [platform\_principal\_ids](#input\_platform\_principal\_ids)
+
+Description: Object IDs of the platform identities. They get "Storage Blob Data Contributor" on the container and are the only identities that can write pools/* or delete documents.
+
+Type: `list(string)`
+
+Default: `[]`
+
+### <a name="input_reader_principal_ids"></a> [reader\_principal\_ids](#input\_reader\_principal\_ids)
+
+Description: Object IDs of identities that only need to read pools and reservations.
+
+Type: `list(string)`
+
+Default: `[]`
+
+### <a name="input_soft_delete_retention_days"></a> [soft\_delete\_retention\_days](#input\_soft\_delete\_retention\_days)
+
+Description: Retention in days for blob and container soft delete.
+
+Type: `number`
+
+Default: `30`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: Tags applied to the storage account.
+
+Type: `map(string)`
+
+Default: `{}`
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| <a name="output_backend_url"></a> [backend\_url](#output\_backend\_url) | ipam backend URL for the container (azblob://<account>.blob.core.windows.net/<container>/). Built only from inputs, so it is known at plan time. |
-| <a name="output_container_name"></a> [container\_name](#output\_container\_name) | Name of the ipam container. |
-| <a name="output_provider_config"></a> [provider\_config](#output\_provider\_config) | Object for the ipam provider's azure\_blob block (provider "ipam" { azure\_blob = module.ipam.provider\_config }). Built only from inputs, so it is known at plan time. |
-| <a name="output_storage_account_id"></a> [storage\_account\_id](#output\_storage\_account\_id) | Resource ID of the storage account. |
+The following outputs are exported:
+
+### <a name="output_backend_url"></a> [backend\_url](#output\_backend\_url)
+
+Description: ipam backend URL for the container (azblob://<account>.blob.core.windows.net/<container>/). Built only from inputs, so it is known at plan time.
+
+### <a name="output_container_name"></a> [container\_name](#output\_container\_name)
+
+Description: Name of the ipam container.
+
+### <a name="output_provider_config"></a> [provider\_config](#output\_provider\_config)
+
+Description: Object for the ipam provider's azure\_blob block (provider "ipam" { azure\_blob = module.ipam.provider\_config }). Built only from inputs, so it is known at plan time.
+
+### <a name="output_storage_account_id"></a> [storage\_account\_id](#output\_storage\_account\_id)
+
+Description: Resource ID of the storage account.
 <!-- END_TF_DOCS -->
 
 ## Contributing
@@ -154,4 +249,4 @@ Contributions are welcome. Please read the [Code of Conduct](./CODE_OF_CONDUCT.m
 
 ## License
 
-This project is licensed under the terms of the [GPL-3.0 license](./LICENSE).
+This project is licensed under the terms of the [Apache-2.0 license](./LICENSE).
