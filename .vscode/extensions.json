@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "hashicorp.terraform",
+    "ms-azuretools.vscode-azureterraform",
+    "ms-azuretools.vscode-azureresourcegroups",
+    "ms-azure-devops.azure-pipelines",
+    "redhat.vscode-yaml",
+    "DavidAnson.vscode-markdownlint",
+    "timonwong.shellcheck",
+    "eamodio.gitlens",
+    "anthropic.claude-code"
+  ]
+}

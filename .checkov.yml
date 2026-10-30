@@ -1,0 +1,11 @@
+---
+# https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+framework:
+  - terraform
+  - github_actions
+  - secrets
+# Skips in this file are global and apply to all resources - consider using inline
+# comments before utilising these.
+# skip-check:
+#   - CKV_AZURE_999  # Description of why this check is skipped
+soft-fail: false

@@ -1,0 +1,31 @@
+#header-from: .header.md
+settings:
+  anchor: true
+  color: true
+  default: true
+  escape: true
+  html: true
+  indent: 2
+  required: true
+  sensitive: true
+  type: true
+  lockfile: false
+
+formatter: "markdown table"
+
+output:
+  file: README.md
+  mode: inject
+
+sections:
+  show:
+    - requirements
+    - providers
+    - modules
+    - inputs
+    - resources
+    - outputs
+
+sort:
+  enabled: true
+  by: required

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    "schedule:earlyMondays"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "packageRules": [
+    {
+      "description": "Group pre-commit hook updates",
+      "groupName": "pre-commit hooks",
+      "matchManagers": [
+        "pre-commit"
+      ]
+    },
+    {
+      "description": "Group TFLint plugin updates",
+      "groupName": "tflint plugins",
+      "matchManagers": [
+        "tflint-plugin"
+      ]
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "groupName": "github-actions",
+      "matchManagers": [
+        "github-actions"
+      ]
+    },
+    {
+      "description": "Group Terraform provider updates",
+      "groupName": "terraform providers",
+      "matchDepTypes": [
+        "provider"
+      ],
+      "matchManagers": [
+        "terraform"
+      ]
+    },
+    {
+      "description": "Group Terraform module updates",
+      "groupName": "terraform modules",
+      "matchDepTypes": [
+        "module"
+      ],
+      "matchManagers": [
+        "terraform"
+      ]
+    }
+  ]
+}

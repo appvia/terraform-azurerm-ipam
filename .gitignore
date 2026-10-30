@@ -1,0 +1,71 @@
+# Local .terraform directories
+**/.terraform/
+
+#Checkov external modules
+.external_modules
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# terraform lock file - intentionally ignore in module
+.terraform.lock.hcl
+
+# Capture common plan names
+tfplan
+tfplan.*
+*.tfplan
+*.plan
+
+# Log files
+*.log
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Override files — local development only
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config
+.terraformrc
+terraform.rc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.iml
+
+# Ignore vim swap files
+*.swp
+*.swo
+
+# Ignore meld diff files
+*.orig
+*.backup
+*.rej
+
+# Environment variable files
+.env
+.env.*
+
+# Ignore lambda zip files and build directories
+*.zip
+builds/
+
+# Python virtualenvs (used by some pre-commit hooks)
+.venv/
+__pycache__/
+*.pyc
+
+# Pre-commit cache
+.pre-commit-cache/
+
+# ALZ library cache
+.alzlib
