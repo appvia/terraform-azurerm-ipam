@@ -1,0 +1,11 @@
+(
+ (
+  !(ActionMatches{'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write'})
+ )
+ OR
+ (
+  @Resource[Microsoft.Storage/storageAccounts/blobServices/containers/blobs:path] StringEquals 'reservations/uks-prod.json'
+  OR
+  @Resource[Microsoft.Storage/storageAccounts/blobServices/containers/blobs:path] StringEquals 'reservations/ukw-prod.json'
+ )
+)
