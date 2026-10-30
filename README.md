@@ -25,24 +25,25 @@ All role assignments are scoped to the container; the module grants nothing at a
 
 ### Environment write access (`environment_role`)
 
-- `custom` (default): the module creates a custom role named `ipam-reservations-writer-<storage_account_name>-<container_name>` (custom role names are unique per tenant) whose only permissions are the data actions `Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read` and `.../blobs/write`. There is no delete, no `add/action` and no management-plane action. It is assigned with an ABAC condition (version 2.0) that allows `blobs/write` only when the blob path equals one of the environment's `reservations/<pool_id>.json`. Reservations documents are created by the platform identity, and a release is an overwrite, so environments never need create or delete.
-- `builtin`: no custom role is created. The built-in "Storage Blob Data Contributor" role is assigned with a condition that allows `blobs/write` only on the same paths and never allows `blobs/delete`, `blobs/add/action` or `blobs/move/action`. **Warning:** that built-in role also carries management-plane actions (`containers/delete`, `containers/write`) that conditions cannot restrict, so environment identities **can still delete or modify the container**. Container soft delete is then the only protection. Use this mode only where creating custom roles is not allowed.
+- `builtin` (default): no custom role is created. The built-in "Storage Blob Data Contributor" role is assigned with a condition that allows `blobs/write` only on the same paths and never allows `blobs/delete`, `blobs/add/action` or `blobs/move/action`. **Warning:** that built-in role also carries management-plane actions (`containers/delete`, `containers/write`) that conditions cannot restrict. The account's `CanNotDelete` lock blocks container deletion through ARM, but environment identities can still modify the container, and container soft delete is the only protection for data-plane deletes. Use `custom` where you need to rule that out.
+- `custom`: the module creates a custom role named `ipam-reservations-writer-<storage_account_name>-<container_name>` (custom role names are unique per tenant) whose only permissions are the data actions `Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read` and `.../blobs/write`. There is no delete, no `add/action` and no management-plane action. It is assigned with an ABAC condition (version 2.0) that allows `blobs/write` only when the blob path equals one of the environment's `reservations/<pool_id>.json`. Reservations documents are created by the platform identity, and a release is an overwrite, so environments never need create or delete.
 
 ### Notes
 
 - **Grants need only pool IDs**, so this module can be applied before the pools exist. The platform state then creates pools with the ipam provider using `backend_url` / `provider_config`.
 - `backend_url` and `provider_config` are built only from input variables, so they are known at plan time and can configure the ipam provider in the same apply as this module.
 - **Hierarchical namespace must stay off.** On ADLS Gen2 accounts, renames can bypass blob path conditions, and the ipam azblob backend requires a flat-namespace account.
-- Shared key access is disabled, so configure the azurerm provider with `storage_use_azuread = true`.
+- Shared key access is disabled, so the module uses the azapi provider and needs no data-plane credentials.
 - Principal IDs are used as `for_each` keys and must be known at plan time.
-- The storage account and container have `lifecycle { prevent_destroy = true }`: they hold the only record of allocated ranges.
+- The storage account and container have `lifecycle { prevent_destroy = true }`, and the account carries a `CanNotDelete` management lock (`ipam-do-not-delete`): they hold the only record of allocated ranges. Remove the lock deliberately before destroying the account.
+- Role assignments and the container retry on Azure replication errors (`PrincipalNotFound`, `RoleDefinitionDoesNotExist`, `StorageAccountIsNotProvisioned`) through azapi's `retry`. The account and container also retry deletion while ARM still reports the scope as locked (`ScopeLocked`), which happens briefly after the lock is removed.
 - Pool IDs must match `^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`.
 
 ## Verification status
 
 The access rules above describe what the role assignments are written to do. Here's what has actually been tested:
 
-- `terraform test` in this repository, in plan mode against a mocked azurerm provider. No real `apply`.
+- `terraform test` in this repository, in plan mode against a mocked azapi provider. No real `apply`.
 - The rendered role condition text, compared byte for byte with a golden file.
 - The ipam Azure Blob backend, exercised on the Azurite emulator by `scripts/e2e.sh` in [terraform-provider-ipam](https://github.com/appvia/terraform-provider-ipam). Azurite authenticates with a connection string and doesn't enforce RBAC or ABAC, so it says nothing about these grants.
 
@@ -92,14 +93,14 @@ See the [examples](./examples) directory for working usage examples.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9.0 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 4.14.0, < 6.0.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.9 |
+| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.8 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 4.14.0, < 6.0.0 |
+| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.8 |
 
 ## Modules
 
@@ -109,13 +110,15 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [azurerm_role_assignment.environment_reader](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
-| [azurerm_role_assignment.environment_writer](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
-| [azurerm_role_assignment.platform](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
-| [azurerm_role_assignment.reader](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
-| [azurerm_role_definition.reservations_writer](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_definition) | resource |
-| [azurerm_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) | resource |
-| [azurerm_storage_container.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_container) | resource |
+| [azapi_resource.container](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.environment_reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.environment_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.platform](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.reader](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.reservations_writer](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_resource.storage_account](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) | resource |
+| [azapi_update_resource.blob_service](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) | resource |
 
 ## Inputs
 
@@ -126,7 +129,7 @@ No modules.
 | <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name) | Globally unique name of the storage account that holds the ipam documents (3-24 lowercase letters and digits). | `string` | n/a | yes |
 | <a name="input_account_replication_type"></a> [account\_replication\_type](#input\_account\_replication\_type) | Replication type of the storage account (for example LRS, ZRS, GRS, GZRS). | `string` | `"GZRS"` | no |
 | <a name="input_container_name"></a> [container\_name](#input\_container\_name) | Name of the private blob container that holds pools/ and reservations/. | `string` | `"ipam"` | no |
-| <a name="input_environment_role"></a> [environment\_role](#input\_environment\_role) | How environment identities get write access to their reservations documents.<br/>"custom" (default): a module-created custom role with only blob read/write data actions, conditioned to the environment's reservations/<pool\_id>.json paths. No delete, no add, no management-plane actions.<br/>"builtin": the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the same paths and denying blob delete/add/move. WARNING: this role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict, so environment identities can still delete or modify the container; container soft delete is then the only protection. | `string` | `"custom"` | no |
+| <a name="input_environment_role"></a> [environment\_role](#input\_environment\_role) | How environment identities get write access to their reservations documents.<br/>"builtin" (default): the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the environment's reservations/<pool\_id>.json paths and denying blob delete/add/move. This role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict; the account's CanNotDelete lock blocks container deletion through ARM, and container soft delete covers the rest.<br/>"custom": a module-created custom role with only blob read/write data actions, conditioned to the same paths. No delete, no add, no management-plane actions. | `string` | `"builtin"` | no |
 | <a name="input_environments"></a> [environments](#input\_environments) | Per-environment access. Each entry lists the pool IDs whose reservations/<pool\_id>.json the environment may overwrite, and the object IDs of its deploy identities. Pool IDs are enough; the pools need not exist yet. | <pre>map(object({<br/>    pool_ids      = list(string)<br/>    principal_ids = list(string)<br/>  }))</pre> | `{}` | no |
 | <a name="input_platform_principal_ids"></a> [platform\_principal\_ids](#input\_platform\_principal\_ids) | Object IDs of the platform identities. They get "Storage Blob Data Contributor" on the container and are the only identities that can write pools/* or delete documents. | `list(string)` | `[]` | no |
 | <a name="input_reader_principal_ids"></a> [reader\_principal\_ids](#input\_reader\_principal\_ids) | Object IDs of identities that only need to read pools and reservations. | `list(string)` | `[]` | no |

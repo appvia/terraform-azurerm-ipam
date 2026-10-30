@@ -39,11 +39,11 @@ variable "container_name" {
 variable "environment_role" {
   description = <<-EOT
     How environment identities get write access to their reservations documents.
-    "custom" (default): a module-created custom role with only blob read/write data actions, conditioned to the environment's reservations/<pool_id>.json paths. No delete, no add, no management-plane actions.
-    "builtin": the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the same paths and denying blob delete/add/move. WARNING: this role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict, so environment identities can still delete or modify the container; container soft delete is then the only protection.
+    "builtin" (default): the built-in "Storage Blob Data Contributor" role with a condition limiting writes to the environment's reservations/<pool_id>.json paths and denying blob delete/add/move. This role also carries management-plane actions (containers/delete, containers/write) that conditions cannot restrict; the account's CanNotDelete lock blocks container deletion through ARM, and container soft delete covers the rest.
+    "custom": a module-created custom role with only blob read/write data actions, conditioned to the same paths. No delete, no add, no management-plane actions.
   EOT
   type        = string
-  default     = "custom"
+  default     = "builtin"
 
   validation {
     condition     = contains(["custom", "builtin"], var.environment_role)

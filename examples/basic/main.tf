@@ -4,16 +4,20 @@
 # to build your own root module that invokes this module
 #####################################################################################
 
-resource "azurerm_resource_group" "ipam" {
-  name     = "rg-ipam-example"
-  location = "uksouth"
+data "azapi_client_config" "current" {}
+
+resource "azapi_resource" "resource_group" {
+  type      = "Microsoft.Resources/resourceGroups@2024-03-01"
+  name      = "rg-ipam-example"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "uksouth"
 }
 
 module "ipam" {
   source = "../../"
 
-  resource_group_name  = azurerm_resource_group.ipam.name
-  location             = azurerm_resource_group.ipam.location
+  resource_group_name  = azapi_resource.resource_group.name
+  location             = azapi_resource.resource_group.location
   storage_account_name = "ipamexample001"
 
   # Platform identity: creates pools with the ipam provider and can delete documents.

@@ -6,12 +6,12 @@ output "backend_url" {
 
 output "storage_account_id" {
   description = "Resource ID of the storage account."
-  value       = azurerm_storage_account.this.id
+  value       = azapi_resource.storage_account.id
 }
 
 output "container_name" {
   description = "Name of the ipam container."
-  value       = azurerm_storage_container.this.name
+  value       = azapi_resource.container.name
 }
 
 output "provider_config" {

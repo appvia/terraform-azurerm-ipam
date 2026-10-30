@@ -1,6 +1,6 @@
-# Plan-only unit tests with a mocked azurerm provider: no Azure credentials, no spend.
+# Plan-only unit tests with a mocked azapi provider: no Azure credentials, no spend.
 
-mock_provider "azurerm" {}
+mock_provider "azapi" {}
 
 variables {
   resource_group_name  = "rg-ipam"
@@ -24,91 +24,108 @@ run "storage_is_hardened" {
   command = plan
 
   assert {
-    condition     = azurerm_storage_account.this.is_hns_enabled == false
+    condition     = azapi_resource.storage_account.body.properties.isHnsEnabled == false
     error_message = "Hierarchical namespace must be off: blob path conditions are unsafe with HNS."
   }
 
   assert {
-    condition     = azurerm_storage_account.this.blob_properties[0].versioning_enabled == true
+    condition     = azapi_update_resource.blob_service.body.properties.isVersioningEnabled == true
     error_message = "Blob versioning must be on."
   }
 
   assert {
-    condition     = azurerm_storage_account.this.shared_access_key_enabled == false
+    condition     = azapi_resource.storage_account.body.properties.allowSharedKeyAccess == false
     error_message = "Shared key access must be off."
   }
 
   assert {
-    condition     = azurerm_storage_account.this.min_tls_version == "TLS1_2" && azurerm_storage_account.this.allow_nested_items_to_be_public == false
+    condition     = azapi_resource.storage_account.body.properties.minimumTlsVersion == "TLS1_2" && azapi_resource.storage_account.body.properties.allowBlobPublicAccess == false
     error_message = "TLS 1.2 minimum and no public blob access are required."
   }
 
   assert {
     condition = (
-      azurerm_storage_account.this.blob_properties[0].delete_retention_policy[0].days == 30 &&
-      azurerm_storage_account.this.blob_properties[0].container_delete_retention_policy[0].days == 30
+      azapi_update_resource.blob_service.body.properties.deleteRetentionPolicy.days == 30 &&
+      azapi_update_resource.blob_service.body.properties.containerDeleteRetentionPolicy.days == 30
     )
     error_message = "Blob and container soft delete must use soft_delete_retention_days (default 30)."
   }
 
   assert {
-    condition     = azurerm_storage_container.this.name == "ipam" && azurerm_storage_container.this.container_access_type == "private"
+    condition     = azapi_resource.container.name == "ipam" && azapi_resource.container.body.properties.publicAccess == "None"
     error_message = "The container must be private and named by container_name."
   }
 
   assert {
     condition = (
-      length(azurerm_role_assignment.platform) == 1 &&
-      azurerm_role_assignment.platform["00000000-0000-0000-0000-00000000aaaa"].role_definition_name == "Storage Blob Data Contributor"
+      azapi_resource.lock.body.properties.level == "CanNotDelete" &&
+      azapi_resource.lock.name == "ipam-do-not-delete"
+    )
+    error_message = "The storage account must carry a CanNotDelete lock."
+  }
+
+  assert {
+    condition = (
+      length(azapi_resource.platform) == 1 &&
+      endswith(azapi_resource.platform["00000000-0000-0000-0000-00000000aaaa"].body.properties.roleDefinitionId, "/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe")
     )
     error_message = "Platform identities get Storage Blob Data Contributor."
   }
 
   assert {
     condition = (
-      length(azurerm_role_assignment.reader) == 1 &&
-      azurerm_role_assignment.reader["00000000-0000-0000-0000-00000000cccc"].role_definition_name == "Storage Blob Data Reader"
+      length(azapi_resource.reader) == 1 &&
+      endswith(azapi_resource.reader["00000000-0000-0000-0000-00000000cccc"].body.properties.roleDefinitionId, "/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1")
     )
     error_message = "Reader identities get Storage Blob Data Reader."
+  }
+
+  assert {
+    condition     = length(azapi_resource.reservations_writer) == 0
+    error_message = "The default (builtin) mode must not create a role definition."
   }
 }
 
 run "prod_condition_matches_golden" {
   command = plan
 
+  variables {
+    environment_role = "custom"
+  }
+
   override_resource {
-    target          = azurerm_role_definition.reservations_writer
+    target          = azapi_resource.reservations_writer
     override_during = plan
     values = {
-      role_definition_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
     }
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].condition == chomp(file("${path.module}/test/testdata/prod_condition.txt"))
+    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.condition == chomp(file("${path.module}/test/testdata/prod_condition.txt"))
     error_message = "The prod write condition must equal test/testdata/prod_condition.txt exactly."
   }
 
   assert {
     condition = alltrue([
       for pool_id in ["uks-prod", "ukw-prod"] :
-      strcontains(azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].condition, "StringEquals 'reservations/${pool_id}.json'")
+      strcontains(azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.condition, "StringEquals 'reservations/${pool_id}.json'")
     ])
     error_message = "The prod condition must allow both prod reservations paths."
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].condition_version == "2.0"
+    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.conditionVersion == "2.0"
     error_message = "Conditions must use condition_version 2.0."
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].role_definition_id == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
+    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
     error_message = "In custom mode the environment write grant must use the custom role, not a built-in role."
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_reader["prod/00000000-0000-0000-0000-000000000001"].role_definition_name == "Storage Blob Data Reader"
+    condition     = endswith(azapi_resource.environment_reader["prod/00000000-0000-0000-0000-000000000001"].body.properties.roleDefinitionId, "/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1")
     error_message = "Environment identities get Storage Blob Data Reader."
   }
 }
@@ -116,23 +133,27 @@ run "prod_condition_matches_golden" {
 run "custom_role_has_only_blob_read_write" {
   command = plan
 
+  variables {
+    environment_role = "custom"
+  }
+
   assert {
-    condition     = length(azurerm_role_definition.reservations_writer) == 1
+    condition     = length(azapi_resource.reservations_writer) == 1
     error_message = "Custom mode creates exactly one role definition."
   }
 
   assert {
-    condition     = azurerm_role_definition.reservations_writer[0].name == "ipam-reservations-writer-ipamtest-ipam"
+    condition     = azapi_resource.reservations_writer[0].body.properties.roleName == "ipam-reservations-writer-ipamtest-ipam"
     error_message = "The custom role name must be ipam-reservations-writer-<account>-<container>."
   }
 
   assert {
-    condition     = length(azurerm_role_definition.reservations_writer[0].permissions[0].actions) == 0 && length(azurerm_role_definition.reservations_writer[0].permissions[0].not_actions) == 0
+    condition     = length(azapi_resource.reservations_writer[0].body.properties.permissions[0].actions) == 0 && length(azapi_resource.reservations_writer[0].body.properties.permissions[0].notActions) == 0
     error_message = "The custom role must have no management-plane actions."
   }
 
   assert {
-    condition = azurerm_role_definition.reservations_writer[0].permissions[0].data_actions == toset([
+    condition = toset(azapi_resource.reservations_writer[0].body.properties.permissions[0].dataActions) == toset([
       "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read",
       "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write",
     ])
@@ -141,7 +162,7 @@ run "custom_role_has_only_blob_read_write" {
 
   assert {
     condition = alltrue([
-      for action in azurerm_role_definition.reservations_writer[0].permissions[0].data_actions :
+      for action in azapi_resource.reservations_writer[0].body.properties.permissions[0].dataActions :
       !strcontains(action, "delete") && !strcontains(action, "add/action") && !strcontains(action, "move/action")
     ])
     error_message = "The custom role must not grant delete, add or move."
@@ -156,17 +177,17 @@ run "builtin_mode_uses_contributor_with_never_clauses" {
   }
 
   assert {
-    condition     = length(azurerm_role_definition.reservations_writer) == 0
+    condition     = length(azapi_resource.reservations_writer) == 0
     error_message = "Builtin mode must not create a role definition."
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].role_definition_name == "Storage Blob Data Contributor"
+    condition     = endswith(azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.roleDefinitionId, "/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe")
     error_message = "Builtin mode assigns Storage Blob Data Contributor to environments."
   }
 
   assert {
-    condition     = azurerm_role_assignment.environment_writer["prod/00000000-0000-0000-0000-000000000001"].condition == chomp(file("${path.module}/test/testdata/prod_condition_builtin.txt"))
+    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.condition == chomp(file("${path.module}/test/testdata/prod_condition_builtin.txt"))
     error_message = "The builtin prod condition must equal test/testdata/prod_condition_builtin.txt exactly."
   }
 }
@@ -198,17 +219,17 @@ run "environment_without_pools_gets_no_write" {
   }
 
   assert {
-    condition     = !contains(keys(azurerm_role_assignment.environment_writer), "audit/00000000-0000-0000-0000-000000000002")
+    condition     = !contains(keys(azapi_resource.environment_writer), "audit/00000000-0000-0000-0000-000000000002")
     error_message = "An environment with no pools must not get a write assignment."
   }
 
   assert {
-    condition     = contains(keys(azurerm_role_assignment.environment_reader), "audit/00000000-0000-0000-0000-000000000002")
+    condition     = contains(keys(azapi_resource.environment_reader), "audit/00000000-0000-0000-0000-000000000002")
     error_message = "An environment with no pools still gets read access."
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.environment_writer) == ["prod/00000000-0000-0000-0000-000000000001"]
+    condition     = keys(azapi_resource.environment_writer) == ["prod/00000000-0000-0000-0000-000000000001"]
     error_message = "Only the environment with pools gets a write assignment."
   }
 }

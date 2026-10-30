@@ -2,9 +2,23 @@
 locals {
   blob_endpoint = "https://${var.storage_account_name}.blob.core.windows.net"
 
-  # Built from the account ID and the input container name so it does not depend on
-  # the container resource's (deprecated) resource_manager_id attribute.
-  container_scope = "${azurerm_storage_account.this.id}/blobServices/default/containers/${var.container_name}"
+  subscription_id = data.azapi_client_config.current.subscription_id
+  container_scope = azapi_resource.container.id
+
+  # Seed for deterministic role assignment and definition names; built from inputs only.
+  assignment_seed = "${var.storage_account_name}/${var.container_name}"
+
+  # Newly created principals and role definitions can take a while to replicate.
+  role_retry_regex = ["PrincipalNotFound", "RoleDefinitionDoesNotExist"]
+
+  # Deleting the lock and then the account races: ARM keeps answering ScopeLocked until
+  # the lock removal has propagated.
+  lock_retry_regex = ["ScopeLocked", "(?i)locked"]
+
+  role_definition_ids = {
+    contributor = "/subscriptions/${local.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe"
+    reader      = "/subscriptions/${local.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1"
+  }
 
   blob_action_prefix = "Microsoft.Storage/storageAccounts/blobServices/containers/blobs"
   blob_path_attr     = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers/blobs:path]"
