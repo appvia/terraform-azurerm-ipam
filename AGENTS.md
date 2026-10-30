@@ -35,6 +35,7 @@ terraform-azurerm-ipam/
 | `azapi_resource.reader` | for_each principal | Storage Blob Data Reader |
 | `azapi_resource.environment_reader` | key `<env>/<principal>` | Reader for every env principal |
 | `azapi_resource.environment_writer` | key `<env>/<principal>` | conditioned write; only envs with `pool_ids != []` |
+| `azapi_resource.lock` | single | `CanNotDelete` on the account; replaced when the grant set changes (see CONVENTIONS) |
 | `azapi_resource.reservations_writer` | count | name `ipam-reservations-writer-<account>-<container>`; only when `environment_role = "custom"` and writers exist |
 | `local.environment_conditions` | map env => string | `custom`: write clause only; `builtin`: write clause AND never-clauses for delete/add/move (`'__ipam_never__'` path) |
 | outputs `backend_url`, `provider_config` | | built from inputs only: MUST stay plan-time known (tested) |
@@ -44,7 +45,7 @@ Inputs: `resource_group_name`, `location`, `storage_account_name` (required); `a
 ## CONVENTIONS
 - Condition text is whitespace-significant: heredoc indentation, `"\n  OR\n  "` join between pool path tests, `trimspace`/`chomp`. Any reformat changes bytes and breaks the golden test.
 - `container_scope` is `azapi_resource.container.id`; every grant uses it as `parent_id`. Role assignment names are `uuidv5` of input-only seeds (known at plan). Built-in role IDs are hard-coded GUIDs in `local.role_definition_ids`.
-- `azapi_resource.lock` (`CanNotDelete`) sits on the account and is inherited by the container. `retry` on assignments/container handles Azure replication errors.
+- `azapi_resource.lock` (`CanNotDelete`) sits on the account and is inherited by the container; it also blocks deleting role assignments/definitions below it (`ScopeLocked`). So the lock `depends_on` every grant resource and has `replace_triggers_external_values` = sorted grant keys + `environment_role`: a grant-set change replaces the lock (delete lock -> change grants -> re-create lock in one apply). Any new grant resource MUST be added to both. `retry` on assignments/container handles Azure replication errors and `ScopeLocked`.
 - Principal IDs are `for_each` keys: must be known at plan time.
 - Checkov skips are inline `#checkov:skip=ID:reason` on the resource (see storage account); `.checkov.yml` has `soft-fail: false`.
 - tflint: terraform ruleset (azurerm ruleset is inert here); every variable/output needs a description and a type; snake_case.
@@ -83,6 +84,6 @@ pre-commit run --all-files
 `make validate` also runs `validate-commits` (needs commitlint and `origin/main`), so it fails in a fresh clone. CI: `.github/workflows/terraform.yml` calls appvia/appvia-cicd-workflows `terraform-module-validation.yml` (pinned SHA, v0.0.11). Release is triggered by a `v*` tag push, not by merging.
 
 ## NOTES
-- Golden test asserts `condition == chomp(file("${path.module}/test/testdata/..."))`: run tests from the repo root (path.module = root). `prod_condition_matches_golden` overrides `role_definition_resource_id` during plan because the mock leaves it unknown.
+- Golden test asserts `condition == chomp(file("${path.module}/test/testdata/..."))`: run tests from the repo root (path.module = root). `prod_condition_matches_golden` overrides the container `id` during plan because the mock leaves it unknown and the custom role definition ID is built from it.
 - `.terraform.lock.hcl` is gitignored on purpose (it's a module).
 - `.mcp.json` wires the Azure and Microsoft Learn MCP servers. Use them for RBAC/ABAC syntax lookups.

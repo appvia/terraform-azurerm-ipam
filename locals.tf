@@ -8,8 +8,9 @@ locals {
   # Seed for deterministic role assignment and definition names; built from inputs only.
   assignment_seed = "${var.storage_account_name}/${var.container_name}"
 
-  # Newly created principals and role definitions can take a while to replicate.
-  role_retry_regex = ["PrincipalNotFound", "RoleDefinitionDoesNotExist"]
+  # Newly created principals and role definitions can take a while to replicate. Grant
+  # deletes can still see ScopeLocked briefly after the lock is removed.
+  role_retry_regex = ["PrincipalNotFound", "RoleDefinitionDoesNotExist", "ScopeLocked"]
 
   # Deleting the lock and then the account races: ARM keeps answering ScopeLocked until
   # the lock removal has propagated.
@@ -24,6 +25,11 @@ locals {
   blob_path_attr     = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers/blobs:path]"
 
   writer_role_name = "ipam-reservations-writer-${var.storage_account_name}-${var.container_name}"
+
+  # Built from inputs, not from azapi_resource.reservations_writer: a reference would make
+  # the writer grants wait for the role's destroy when switching to builtin, while the role
+  # cannot be deleted until those grants move off it (RoleDefinitionHasAssignments).
+  writer_role_definition_id = "${local.container_scope}/providers/Microsoft.Authorization/roleDefinitions/${uuidv5("url", "${local.assignment_seed}/${local.writer_role_name}")}"
 
   # One entry per (environment, principal) for the read grant.
   environment_readers = merge([

@@ -35,8 +35,8 @@ All role assignments are scoped to the container; the module grants nothing at a
 - **Hierarchical namespace must stay off.** On ADLS Gen2 accounts, renames can bypass blob path conditions, and the ipam azblob backend requires a flat-namespace account.
 - Shared key access is disabled, so the module uses the azapi provider and needs no data-plane credentials.
 - Principal IDs are used as `for_each` keys and must be known at plan time.
-- The storage account and container have `lifecycle { prevent_destroy = true }`, and the account carries a `CanNotDelete` management lock (`ipam-do-not-delete`): they hold the only record of allocated ranges. Remove the lock deliberately before destroying the account.
-- Role assignments and the container retry on Azure replication errors (`PrincipalNotFound`, `RoleDefinitionDoesNotExist`, `StorageAccountIsNotProvisioned`) through azapi's `retry`. The account and container also retry deletion while ARM still reports the scope as locked (`ScopeLocked`), which happens briefly after the lock is removed.
+- The storage account and container have `lifecycle { prevent_destroy = true }`, and the account carries a `CanNotDelete` management lock (`ipam-do-not-delete`): they hold the only record of allocated ranges. Remove the lock deliberately before destroying the account. The lock also blocks deleting the role assignments and the custom role, so the module replaces the lock whenever the set of grants changes (a principal added or removed, or `environment_role` switched): in one apply, Terraform deletes the lock, changes the grants, then re-creates the lock. The account is unlocked for that short window.
+- Role assignments and the container retry on Azure replication errors (`PrincipalNotFound`, `RoleDefinitionDoesNotExist`, `StorageAccountIsNotProvisioned`) through azapi's `retry`. The account, the container and the role assignments also retry deletion while ARM still reports the scope as locked (`ScopeLocked`), which happens briefly after the lock is removed.
 - Pool IDs must match `^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`.
 
 ## Verification status
@@ -87,6 +87,8 @@ provider "ipam" {
 See the [examples](./examples) directory for working usage examples.
 
 - [Basic](./examples/basic) - Storage, platform access and two environments.
+- [Platform team](./examples/platform-team) - Storage, grants for two consuming teams, and the pool hierarchy created with the ipam provider.
+- [Consuming team](./examples/consuming-team) - A team's root module that allocates subnets from its own pool.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

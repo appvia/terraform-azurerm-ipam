@@ -50,10 +50,22 @@ resource "azapi_resource" "storage_account" {
 
 ## Blocks deletion of the account, and (by inheritance) its containers, through ARM.
 ## Data-plane deletes are not covered; soft delete and versioning protect those.
+## The lock also blocks deleting role assignments and the custom role under the account
+## (ScopeLocked). So it depends on every grant, and it is replaced whenever the set of
+## grants changes: in one apply, Terraform deletes the lock, then deletes or changes the
+## grants, then re-creates the lock.
 resource "azapi_resource" "lock" {
   type      = "Microsoft.Authorization/locks@2020-05-01"
   name      = "ipam-do-not-delete"
   parent_id = azapi_resource.storage_account.id
+
+  replace_triggers_external_values = {
+    platform            = sort(distinct(var.platform_principal_ids))
+    readers             = sort(distinct(var.reader_principal_ids))
+    environment_readers = sort(keys(local.environment_readers))
+    environment_writers = sort(keys(local.environment_writers))
+    environment_role    = var.environment_role
+  }
 
   body = {
     properties = {
@@ -61,6 +73,14 @@ resource "azapi_resource" "lock" {
       notes = "The account holds the only record of allocated ipam ranges. Remove this lock deliberately before deleting it."
     }
   }
+
+  depends_on = [
+    azapi_resource.platform,
+    azapi_resource.reader,
+    azapi_resource.environment_reader,
+    azapi_resource.environment_writer,
+    azapi_resource.reservations_writer,
+  ]
 }
 
 ## blobServices/default always exists, so it is updated rather than created.
@@ -185,6 +205,9 @@ resource "azapi_resource" "reservations_writer" {
       assignableScopes = [local.container_scope]
     }
   }
+
+  # Switching to builtin: the writer grants move off this role in the same apply.
+  retry = { error_message_regex = ["RoleDefinitionHasAssignments"] }
 }
 
 ## Conditioned write grant per environment principal; environments with no pools get none.
@@ -197,7 +220,7 @@ resource "azapi_resource" "environment_writer" {
 
   body = {
     properties = {
-      roleDefinitionId = var.environment_role == "custom" ? azapi_resource.reservations_writer[0].id : local.role_definition_ids.contributor
+      roleDefinitionId = var.environment_role == "custom" ? local.writer_role_definition_id : local.role_definition_ids.contributor
       principalId      = each.value.principal_id
       description      = "ipam environment ${each.value.environment}: overwrite own reservations documents"
       conditionVersion = "2.0"

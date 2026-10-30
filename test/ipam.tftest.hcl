@@ -94,10 +94,10 @@ run "prod_condition_matches_golden" {
   }
 
   override_resource {
-    target          = azapi_resource.reservations_writer
+    target          = azapi_resource.container
     override_during = plan
     values = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/containers/ipam"
     }
   }
 
@@ -120,7 +120,7 @@ run "prod_condition_matches_golden" {
   }
 
   assert {
-    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"
+    condition     = azapi_resource.environment_writer["prod/00000000-0000-0000-0000-000000000001"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/containers/ipam/providers/Microsoft.Authorization/roleDefinitions/${azapi_resource.reservations_writer[0].name}"
     error_message = "In custom mode the environment write grant must use the custom role, not a built-in role."
   }
 
