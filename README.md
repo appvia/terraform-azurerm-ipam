@@ -86,7 +86,6 @@ provider "ipam" {
 
 See the [examples](./examples) directory for working usage examples.
 
-- [Basic](./examples/basic) - Storage, platform access and two environments.
 - [Platform team](./examples/platform-team) - Storage, grants for two consuming teams, and the pool hierarchy created with the ipam provider.
 - [Consuming team](./examples/consuming-team) - A team's root module that allocates subnets from its own pool.
 
