@@ -17,7 +17,7 @@ terraform-azurerm-ipam/
 ├── test/testdata/prod_condition*.txt  # GOLDEN condition text, byte-compared
 ├── examples/
 │   ├── platform-team/   # module + ipam provider: root pool + one child pool per team, same apply
-│   └── consuming-team/  # ipam provider only (appvia/ipam ~> 0.1.1): data.ipam_pool + ipam_allocation
+│   └── consuming-team/  # ipam provider only (appvia/ipam ~> 0.2): data.ipam_pool + ipam_allocation
 ├── docs/            # banner images only
 └── scripts/         # license-headers.sh (+ its test) is live; init-from-template.sh, generate-banner.py + 410 KB font are template leftovers
 ```

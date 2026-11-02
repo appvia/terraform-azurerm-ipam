@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.8)
 
-- <a name="requirement_ipam"></a> [ipam](#requirement\_ipam) (~> 0.1)
+- <a name="requirement_ipam"></a> [ipam](#requirement\_ipam) (~> 0.2)
 
 ## Providers
 
@@ -23,7 +23,7 @@ The following providers are used by this module:
 
 - <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 2.8)
 
-- <a name="provider_ipam"></a> [ipam](#provider\_ipam) (~> 0.1)
+- <a name="provider_ipam"></a> [ipam](#provider\_ipam) (~> 0.2)
 
 ## Modules
 

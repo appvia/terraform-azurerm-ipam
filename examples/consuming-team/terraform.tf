@@ -8,7 +8,7 @@ terraform {
   required_providers {
     ipam = {
       source  = "appvia/ipam"
-      version = "~> 0.1"
+      version = "~> 0.2"
     }
   }
 }

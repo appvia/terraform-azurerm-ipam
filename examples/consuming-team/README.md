@@ -11,13 +11,13 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.9)
 
-- <a name="requirement_ipam"></a> [ipam](#requirement\_ipam) (~> 0.1)
+- <a name="requirement_ipam"></a> [ipam](#requirement\_ipam) (~> 0.2)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_ipam"></a> [ipam](#provider\_ipam) (~> 0.1)
+- <a name="provider_ipam"></a> [ipam](#provider\_ipam) (~> 0.2)
 
 ## Modules
 
